@@ -1,0 +1,33 @@
+name: Prepare portfolio videos
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/prepare-media.py
+      - .github/workflows/prepare-media.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: prepare-portfolio-videos
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out portfolio
+        uses: actions/checkout@v4
+      - name: Ensure FFmpeg is available
+        run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Prepare four videos and previews
+        run: python3 scripts/prepare-media.py
+      - name: Save video assets to the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/videos
+          if ! git diff --cached --quiet; then
+            git commit -m "Add four portfolio videos with video 3 rotated left"
+            git push origin HEAD:main
+          fi
